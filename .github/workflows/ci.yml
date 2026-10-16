@@ -1,0 +1,26 @@
+name: My First CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download repository code
+        uses: actions/checkout@v4
+
+      - name: Check website file
+        run: test -f index.html
+
+      - name: Check website content
+        run: grep -q "Hello from CI/CD!" index.html
+
+      - name: Show success message
+        run: echo "CI pipeline passed!"
