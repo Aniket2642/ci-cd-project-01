@@ -1,4 +1,5 @@
-name: My First CI Pipeline
+
+name: CI and CD Pipeline
 
 on:
   push:
@@ -8,12 +9,20 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Download repository code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Check website file
@@ -22,5 +31,36 @@ jobs:
       - name: Check website content
         run: grep -q "Hello from CI/CD!" index.html
 
-      - name: Show success message
-        run: echo "CI pipeline passed!"
+      - name: Confirm tests passed
+        run: echo "CI tests passed!"
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Prepare website
+        run: |
+          mkdir -p public
+          cp index.html public/index.html
+
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
+
